@@ -1,12 +1,11 @@
 <script setup lang="ts">
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import Greet from "./components/Greet.vue";
 import List from "./components/List.vue";
 import {ref} from "vue";
 import {listen} from '@tauri-apps/api/event'
 import {Event} from "@tauri-apps/api/helpers/event";
-
+import { invoke } from "@tauri-apps/api/tauri";
 const clipboardText = ref('');
 const clipboardImage = ref('');
 
@@ -28,22 +27,31 @@ listen('clipboard-changed', (event:Event<ClipboardDTO>) => {
     clipboardImage.value = dto.content;
   }
 })
+function snapshot_on_current_window() {
+  // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+  invoke("snapshot_on_current_window").then((window_application_id) => {
+    console.log("snapshot_on_current_window",window_application_id);
+    appWindow.show();
+    appWindow.setFocus();
+    // timeout to wait for the window to be shown
 
+    invoke("paste_on_window_snapshot",{id:window_application_id});
 
+  });
+}
+import { appWindow } from '@tauri-apps/api/window';
+
+import {isRegistered, register} from '@tauri-apps/api/globalShortcut';
+register('Command+Control+V', snapshot_on_current_window);
+isRegistered('Command+Control+V').then((registered) => {
+  console.log('Command+Control+V is registered:', registered);
+});
 </script>
 
 <template>
-  <div>
-<a-layout>
-      <a-layout-header>Header</a-layout-header>
-      <a-layout-content>
+
+
     <List/>
-    {{ clipboardText }}
-    <img :src="clipboardImage" alt="image">
-      </a-layout-content>
-      <a-layout-footer>Footer</a-layout-footer>
-    </a-layout>
-    
-  </div>
+
 </template>
 

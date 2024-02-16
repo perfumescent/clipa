@@ -20,6 +20,12 @@
         "all": true,
         "writeText": true,
         "readText": true
+      },
+      "window": {
+        "all": true
+      },
+      "globalShortcut": {
+        "all": true
       }
     },
     "windows": [

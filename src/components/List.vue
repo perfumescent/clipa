@@ -8,10 +8,8 @@
       <a-radio value="medium">Image</a-radio>
       <a-radio value="large">File</a-radio>
     </a-radio-group>
-    <a-list :size="size">
-      <template #header>
-        List title
-      </template>
+    <a-list :size="size" :max-height="200" :hoverable="true">
+
       <a-list-item>Beijing Bytedance Technology Co., Ltd.
 
         <template #extra>

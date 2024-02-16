@@ -5,6 +5,8 @@ mod clipboard;
 use clipboard_master::Master;
 use crate::clipboard::clipboard_listener::ClipboardListener;
 use std::thread;
+use crate::clipboard::cmd::snapshot_on_current_window;
+use crate::clipboard::cmd::paste_on_window_snapshot;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -14,7 +16,13 @@ fn greet(name: &str) -> String {
 
 
 fn main() {
-
+    // thread::spawn(|| {
+    //     loop {
+    //         switch_focus_and_back();
+    //         simulate_paste();
+    //         thread::sleep(std::time::Duration::from_secs(3));
+    //     }
+    // });
     tauri::Builder::default()
         .setup(|app| {
             let clipboard = Clipboard::new().unwrap();
@@ -25,7 +33,7 @@ fn main() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![greet,snapshot_on_current_window,paste_on_window_snapshot])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
