@@ -1,30 +1,35 @@
 use std::any::Any;
+use arboard::ImageData;
 use chrono::Local;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use sled::Db;
+use crate::clipboard::image_data::ClipboardImage;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ClipboardItem {
+pub enum ClipboardContent {
+    Text(String),
+    Image(ClipboardImage),
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ClipboardItem{
     id: String,
-    pub(crate) content_type: ContentType,
-    pub(crate) content: Box<dyn Any>,
+    pub(crate) content: ClipboardContent,
     summary: String,
     timestamp: i64,
 }
 
 impl ClipboardItem {
-    pub fn new(content_type: ContentType, content: String, summary: String) -> Self {
+    pub fn new(content: ClipboardContent, summary: String) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
-            content_type,
             content,
             summary,
             timestamp: Local::now().timestamp_millis(),
         }
     }
     
-    pub fn set
+
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

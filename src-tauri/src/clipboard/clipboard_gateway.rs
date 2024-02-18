@@ -1,6 +1,8 @@
-use arboard::{Clipboard, Get};
+
+use arboard::{Clipboard, Error};
 use once_cell::sync::Lazy;
-use crate::clipboard::dao::{ClipboardItem, ContentType};
+use crate::clipboard::dao::{ClipboardContent, ClipboardItem};
+use crate::clipboard::image_data::ClipboardImage;
 
 pub(crate) static CLIPBOARD_GATEWAY: Lazy<OsClipboardGateway> = Lazy::new(|| OsClipboardGateway::new());
 
@@ -15,21 +17,26 @@ impl OsClipboardGateway {
             clipboard: Clipboard::new().unwrap(),
         }
     }
-    pub fn set(&mut self, item: ClipboardItem) {
-        match item.content_type {
-            ContentType::Text => {
-                // 类型转换
-                item.content.downcast_ref::<String>().map(|text| {
-                    self.clipboard.set_text(text).ok();
-                });
+    pub fn set(&mut self, item: ClipboardItem)->Result<(), Error> {
+        match item.content{
+            ClipboardContent::Text(text) => {
+                self.clipboard.set_text(text)
             }
-            ContentType::Image => {
-                
+            ClipboardContent::Image(image_data) => {
+                let data = image_data.to_image_data();
+                self.clipboard.set_image(data)
             }
         }
     }
 
-    pub fn get(&mut self) -> Get<'_> {
-        self.clipboard.get()
+    pub fn get(&mut self) -> Result<ClipboardItem,Error>{
+        self.clipboard.get_text().map(|text|{
+            ClipboardItem::new(ClipboardContent::Text(text),text.chars().take(100).collect::<String>())
+        }).or_else(|e|{
+            self.clipboard.get_image().map(|image_data|{
+                let clipboard_image = ClipboardImage::from(image_data);
+                ClipboardItem::new(ClipboardContent::Image(clipboard_image), clipboard_image.to_base64_jpeg_thumbnail())
+            })
+        })
     }
 }
