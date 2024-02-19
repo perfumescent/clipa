@@ -5,25 +5,13 @@ pub fn snapshot_on_current_window() -> String {
 #[tauri::command]
 pub fn paste_on_window_snapshot(application_id: String, clipboard_item_id: String) {
     println!("application_id:{},clipboard_item_id:{}", application_id, clipboard_item_id);
-    CLIPBOARD_DAO.query_clipboard_item(clipboard_item_id).map(|item| {
-        let c = CLIPBOARD_GATEWAY.lock().unwrap();
-        match item {
-            Text => {
-                c.set_text(item.content.clone());
-            }
-            Image => {
-                c.set_image(item.content.clone());
-            }
-        }
-    }).unwrap();
-    
+
     focus_on_window(application_id).unwrap();
     simulate_paste();
 }
 
 use std::process::Command;
-use crate::clipboard::clipboard_gateway::CLIPBOARD_GATEWAY;
-use crate::clipboard::dao::{CLIPBOARD_DAO, ClipboardItem};
+use crate::clipboard::dao::{CLIPBOARD_DAO};
 
 fn simulate_paste() {
     let script = r#"

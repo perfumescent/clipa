@@ -1,20 +1,16 @@
-use crate::clipboard::dao::ContentType::{Image, Text};
-use crate::clipboard::dao::{ClipboardItem, CLIPBOARD_DAO};
-
 use clipboard_master::{CallbackResult, ClipboardHandler, Master};
 
+use crate::clipboard::clipboard_gateway::OsClipboardGateway;
+use crate::clipboard::dao::CLIPBOARD_DAO;
 use std::io::Error;
 use std::{panic, thread};
-use crate::clipboard::clipboard_gateway::CLIPBOARD_GATEWAY;
-
 
 pub struct ClipboardListener;
 
 impl ClipboardListener {
     // 提供一个新的构造函数来创建实例
     pub fn new() -> Self {
-        Self {
-        }
+        Self {}
     }
 
     pub fn run() {
@@ -40,38 +36,13 @@ impl ClipboardListener {
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) -> CallbackResult {
         println!("*********Clipboard changed***********");
-        CLIPBOARD_GATEWAY
-            .get()
-            .text()
-            .map(|text| {
-                println!("Got text: {}", text); // 打印成功获取的文本
-                let summary = text.chars().take(20).collect::<String>();
-                CLIPBOARD_DAO
-                    .insert_clipboard_item(ClipboardItem::new(Text, text, summary))
-                    .unwrap(); // 插入到数据库
+        OsClipboardGateway::get()
+            .map(|item| {
+                CLIPBOARD_DAO.insert_clipboard_item(item).map_err(|e| {
+                    println!("Error when inserting database: {}", e);
+                })
             })
-            .map_err(|e| {
-                println!("Error getting text: {}", e); // 处理获取文本的错误
-                let image_data = CLIPBOARD_GATEWAY.get().image().unwrap();
-                let base64_jpeg = image_data_to_base64_jpeg(
-                    image_data.bytes.clone(),
-                    image_data.width,
-                    image_data.height,
-                );
-                let base64_jpeg_thumbnail = image_data_to_base64_jpeg_thumbnail(
-                    image_data.bytes,
-                    image_data.width,
-                    image_data.height,
-                );
-                CLIPBOARD_DAO
-                    .insert_clipboard_item(ClipboardItem::new(
-                        Image,
-                        base64_jpeg,
-                        base64_jpeg_thumbnail,
-                    ))
-                    .ok(); // 插入到数据库
-            })
-            .ok(); // 将外部Result转换为Option，忽略最终结果，仅为了链式处理
+            .ok();
 
         println!("*********Clipboard updated**********");
 
