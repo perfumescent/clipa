@@ -1,64 +1,19 @@
+use crate::clipboard::clipboard_context::ClipboardContext;
+use crate::clipboard::dao::{CLIPBOARD_DAO, ClipboardItemDTO};
+
 #[tauri::command]
-pub fn snapshot_on_current_window() -> String {
-    return get_frontmost_window_application_id().unwrap();
+pub fn wakeup() {
+    ClipboardContext::wakeup();
 }
 #[tauri::command]
-pub fn paste_on_window_snapshot(application_id: String, clipboard_item_id: String) {
-    println!("application_id:{},clipboard_item_id:{}", application_id, clipboard_item_id);
-
-    focus_on_window(application_id).unwrap();
-    simulate_paste();
+pub fn paste(clipboard_item_id: String) {
+    ClipboardContext::paste_on_app(clipboard_item_id);
 }
 
-use std::process::Command;
-use crate::clipboard::dao::{CLIPBOARD_DAO};
-
-fn simulate_paste() {
-    let script = r#"
-    tell application "System Events"
-        keystroke "v" using {command down}
-    end tell
-    "#;
-
-    if let Err(e) = Command::new("osascript").arg("-e").arg(script).output() {
-        eprintln!("Failed to simulate paste: {}", e);
-    }
+#[tauri::command]
+pub fn query_clipboard_items() -> Vec<ClipboardItemDTO> {
+    let vec = CLIPBOARD_DAO.read_all_clipboard_items().unwrap_or(Vec::new());
+    vec.into_iter().map(|item| item.to_dto()).collect()
 }
-fn get_frontmost_window_application_id() -> std::io::Result<String> {
-    let script = r#"
-tell application "System Events"
-    set frontmostApp to first application process whose frontmost is true
-    set appId to bundle identifier of frontmostApp
-    if appId is missing value then
-        set appId to name of frontmostApp
-    end if
-    return appId
-end tell
 
-    "#;
 
-    let output = Command::new("osascript").arg("-e").arg(script).output()?;
-
-    if output.status.success() {
-        let result = String::from_utf8_lossy(&output.stdout);
-        println!("frontmost_window_application_id:{}", result.to_string());
-        Ok(result.to_string())
-    } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Failed to execute AppleScript",
-        ))
-    }
-}
-fn focus_on_window(application_id: String) -> std::io::Result<()> {
-    let script = format!(
-        r#"
-    tell application id {} to activate
-    "#,
-        application_id
-    );
-
-    Command::new("osascript").arg("-e").arg(script).output()?;
-
-    Ok(())
-}

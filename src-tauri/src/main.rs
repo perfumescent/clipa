@@ -1,11 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use arboard::Clipboard;
-mod clipboard;
-use crate::clipboard::dao::CLIPBOARD_DAO;
 
-use std::{thread};
+mod clipboard;
+
 use crate::clipboard::clipboard_listener::ClipboardListener;
+use crate::clipboard::cmd::{paste, query_clipboard_items, wakeup};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -21,13 +20,14 @@ fn main() {
     //     thread::sleep(std::time::Duration::from_secs(5));
     // });
 
-    // tauri::Builder::default()
-    //     .setup(|app| Ok(()))
-    //     .invoke_handler(tauri::generate_handler![
-    //         greet,
-    //         snapshot_on_current_window,
-    //         paste_on_window_snapshot
-    //     ])
-    //     .run(tauri::generate_context!())
-    //     .expect("error while running tauri application");
+    tauri::Builder::default()
+        .setup(|app| Ok(()))
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            wakeup,
+            paste,
+            query_clipboard_items
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }

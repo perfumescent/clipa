@@ -17,6 +17,13 @@ pub struct ClipboardItem {
     summary: String,
     timestamp: i64,
 }
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ClipboardItemDTO {
+    id: String,
+    content_type: String,
+    summary: String,
+    timestamp: i64,
+}
 impl ClipboardItem {
     pub fn new(content: ClipboardContent, summary: String) -> Self {
         Self {
@@ -24,6 +31,19 @@ impl ClipboardItem {
             content,
             summary,
             timestamp: Local::now().timestamp_millis(),
+        }
+    }
+    
+    pub fn to_dto(self) -> ClipboardItemDTO {
+        let content_type = match self.content {
+            ClipboardContent::Text(_) => "Text".to_string(),
+            ClipboardContent::Image(_) => "Image".to_string(),
+        };
+        ClipboardItemDTO {
+            id: self.id,
+            content_type,
+            summary: self.summary,
+            timestamp: self.timestamp,
         }
     }
 }

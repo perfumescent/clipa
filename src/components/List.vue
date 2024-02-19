@@ -1,46 +1,63 @@
 
 <template>
 
-    <a-input-search  placeholder="Please enter something"/>
+    <a-input-search  placeholder="Please enter something" @search="query"/>
 
-    <a-radio-group v-model="size" type="button">
-      <a-radio value="small">Text</a-radio>
-      <a-radio value="medium">Image</a-radio>
-      <a-radio value="large">File</a-radio>
-    </a-radio-group>
-    <a-list :size="size" :max-height="200" :hoverable="true">
+  <a-empty v-if="data.length===0"/>
+  <a-table v-else :columns="columns" :data="data" :column-resizable="true" size="mini">
 
-      <a-list-item>Beijing Bytedance Technology Co., Ltd.
+      <template #summary="{ record }" >
+        <div v-if="record.content_type === 'Image'">
+          <a-image :src="record.summary" height="100"/>
+        </div>
+        <div v-else class="ellipsis-text">
+          {{ record.summary }}
+        </div>
 
-        <template #extra>
-          <div className="image-area">
-            <img alt="arco-design" src="//p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/29c1f9d7d17c503c5d7bf4e538cb7c4f.png~tplv-uwbnlip3yd-webp.webp"/>
-          </div>
-        </template>
-      </a-list-item>
-      <a-list-item>Bytedance Technology Co., Ltd.</a-list-item>
-      <a-list-item>Beijing Toutiao Technology Co., Ltd.</a-list-item>
-      <a-list-item>Beijing Volcengine Technology Co., Ltd.</a-list-item>
-      <a-list-item>China Beijing Bytedance Technology Co., Ltd.</a-list-item>
-    </a-list>
+      </template>
+    <template #op="{ record }" >
+      <a-button @click="$modal.info({ title:'Name', content:record.name })">view</a-button>
+
+    </template>
+  </a-table>
+
 
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-const size = ref('medium');
+import { ref} from 'vue';
+import { invoke } from "@tauri-apps/api/tauri";
+
+const columns = [
+  {
+    title: 'summary',
+    dataIndex: 'summary',slotName: 'summary',ellipsis: true
+  },
+  {
+    title: 'op',slotName: 'op',width: 80
+  }
+];
+interface ClipboardItemDTO {
+  id: string;
+  content_type: string;
+  summary: string;
+  timestamp: number;
+}
+const data = ref<ClipboardItemDTO[]>([]);
+function query() {
+  invoke("query_clipboard_items").then((res ) => {
+    console.log("query_clipboard_items", res);
+    data.value = res as ClipboardItemDTO[];
+  });
+}
 </script>
 <style scoped>
-.image-area {
-  width: 183px;
-  height: 119px;
-  border-radius: 2px;
+.ellipsis-text {
+  display: block; /* 或者 inline-block */
+  white-space: nowrap;
   overflow: hidden;
-}
-
-
-.image-area img {
-  width: 100%;
+  text-overflow: ellipsis;
+  width: 100%; /* 使得元素宽度适应父容器 */
 }
 
 </style>
