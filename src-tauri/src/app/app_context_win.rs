@@ -1,11 +1,22 @@
 
 use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
 use crate::clipboard::database::CLIPBOARD_DAO;
-use std::process::Command;
-use winapi::shared::windef::HWND;
-use winapi::um::winuser::GetForegroundWindow;
-use crate::app::app_context::{ClipaAppContext, CLIPBOARD_CONTEXT_LOCK};
 
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
+use crate::app::app_context::{ClipaAppContext};
+use windows::Win32::Foundation::{BOOL, HWND};
+use windows::Win32::System::Threading::{AttachThreadInput};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
+};
+use windows::Win32::UI::Input::KeyboardAndMouse::{
+    SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS
+};
+use windows::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_CONTROL, VK_V};
+
+
+static HWND_LOCK: Lazy<Mutex<HWND>> = Lazy::new(|| Mutex::new(HWND::default()));
 impl ClipaAppContext {
     pub fn new() -> Self {
         Self {
@@ -13,13 +24,15 @@ impl ClipaAppContext {
         }
     }
     pub fn wakeup() {
-        get_front_most_window_application_id()
-            .map(|app_id| {
-                println!("wakeup:{}", app_id);
-                let mut context = CLIPBOARD_CONTEXT_LOCK.lock().unwrap();
-                context.invoking_app_id = app_id;
-            })
-            .ok();
+        unsafe {
+            // 获取当前前台窗口的句柄
+            let hwnd: HWND = GetForegroundWindow();
+            println!("hwnd:{:?}", hwnd);
+            HWND_LOCK.lock().map(|mut hwnd_lock| {
+                *hwnd_lock = hwnd;
+            }).ok();
+        }
+
     }
 
     pub fn paste_on_app(clipboard_item_id: String) {
@@ -28,8 +41,6 @@ impl ClipaAppContext {
             .map(|item| {
                 OsClipboardGateway::set(item)
                     .map(|()| {
-                        let context = CLIPBOARD_CONTEXT_LOCK.lock().unwrap();
-                        focus_on_window(context.invoking_app_id.clone());
                         simulate_paste();
                     })
                     .map_err(|e| {
@@ -45,41 +56,89 @@ impl ClipaAppContext {
 
 
 fn simulate_paste() {
-    let script = r#"
-        tell application "System Events"
-            keystroke "v" using {command down}
-        end tell
-    "#;
-
-    if let Err(e) = Command::new("osascript").arg("-e").arg(script).output() {
-        eprintln!("Failed to simulate paste: {}", e);
-    }
-}
-fn get_front_most_window_application_id() -> Result<String, std::io::Error> {
-    // 获取当前前台窗口的句柄
     unsafe {
-        let hwnd: HWND = GetForegroundWindow();
-        if hwnd.is_null() {
-            eprintln!("No foreground window.");
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "No foreground window."));
-        }
-    }
-    Ok("".to_string())
-}
-fn focus_on_window(application_id: String) {
-    let script = format!(
-        r#"
-        tell application id {} to activate
-    "#,
-        application_id
-    );
+        HWND_LOCK.lock().map(|hwnd_lock| {
+            let hwnd = *hwnd_lock;
+            // 获取当前前台窗口句柄和它的线程ID
+            let hwnd_foreground = GetForegroundWindow();
+            let foreground_thread_id = GetWindowThreadProcessId(hwnd_foreground, None);
 
-    Command::new("osascript")
-        .arg("-e")
-        .arg(script)
-        .output()
-        .map_err(|e| {
-            eprintln!("Failed to focus_on_window {}: {}", application_id, e);
-        })
-        .ok();
+            // 获取目标窗口的线程ID
+            let target_thread_id = GetWindowThreadProcessId(hwnd, None);
+
+            // 附加到目标窗口的线程，以便可以操作它
+            if target_thread_id != foreground_thread_id
+                && AttachThreadInput(foreground_thread_id, target_thread_id, BOOL::from(true))
+                    .as_bool()
+            {
+                // 将目标窗口设置为前台
+                let bool = SetForegroundWindow(hwnd);
+                println!("bool:{:?}", bool);
+                // SetFocus(hwnd);
+                send_paste_command();
+                // 在完成操作后，取消附加
+                AttachThreadInput(foreground_thread_id, target_thread_id, BOOL::from(false));
+            }
+        }).ok();
+    }
 }
+
+unsafe fn send_paste_command() {
+    let inputs = [
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_CONTROL,
+                    wScan: 0,
+                    dwFlags: KEYBD_EVENT_FLAGS(0), // 0 for key press
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_V,
+                    wScan: 0,
+                    dwFlags: KEYBD_EVENT_FLAGS(0), // 0 for key press
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_V,
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP, // Key up
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_CONTROL,
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP, // Key up
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    ];
+
+    let inputs_sent = SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+
+    if inputs_sent == 0 {
+        println!("Failed to send_paste_command");
+    };
+}
+

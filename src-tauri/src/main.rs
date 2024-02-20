@@ -33,111 +33,49 @@ fn greet(name: &str) -> String {
 //         .run(tauri::generate_context!())
 //         .expect("error while running tauri application");
 // }
-use std::{mem, thread};
 use std::time::Duration;
-use winapi::shared::windef::HWND;
-use winapi::um::winuser::{AllowSetForegroundWindow, ASFW_ANY, GetFocus, GetWindowTextW, INPUT_u, LPINPUT, SendMessageW, SPI_GETFOREGROUNDLOCKTIMEOUT, SW_SHOW, VK_CONTROL};
-use winapi::um::winuser::{
-    GetForegroundWindow, SetForegroundWindow, ShowWindow, SW_HIDE, SW_MINIMIZE, SW_RESTORE,
+use std::{mem, thread};
+use windows::core::Result;
+use windows::Win32::Foundation::{BOOL, HWND};
+use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
 };
 
-use std::ffi::OsString;
-use std::os::windows::ffi::OsStringExt;
-use winapi::um::winnt::{PVOID, WCHAR};
-
-use winapi::um::winuser::{keybd_event};
-use winapi::um::winuser::{SystemParametersInfoW, GetWindowThreadProcessId, AttachThreadInput, SetFocus, BringWindowToTop , SPI_SETFOREGROUNDLOCKTIMEOUT, KEYBDINPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP};
-use winapi::um::processthreadsapi::GetCurrentThreadId;
-use std::ptr::null_mut;use winapi::um::winuser::{ WM_SETTEXT};
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
-use winapi::shared::minwindef::{LPARAM, WPARAM};
-fn win_title(hwnd: HWND){
-    unsafe{
-        // 准备缓冲区接收窗口标题
-        let mut buffer: [WCHAR; 256] = [0; 256];
-        let len = GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
-
-        // 将宽字符串转换为Rust字符串
-        let window_title = OsString::from_wide(&buffer[..len as usize])
-            .to_string_lossy()
-            .into_owned();
-
-        println!("Current window {:?} title: {}", hwnd, window_title);
-    }
-}
 fn main() {
     unsafe {
         loop {
             // 获取当前前台窗口的句柄
             let hwnd: HWND = GetForegroundWindow();
-            if hwnd.is_null() {
-                eprintln!("No foreground window.");
-                continue;
+            println!("hwnd:{:?}", hwnd);
+            // sleep 3s
+            thread::sleep(Duration::from_secs(3));
+            // 获取当前前台窗口句柄和它的线程ID
+            let hwnd_foreground = GetForegroundWindow();
+            let foreground_thread_id = GetWindowThreadProcessId(hwnd_foreground, None);
+
+            // 获取目标窗口的线程ID
+            let target_thread_id = GetWindowThreadProcessId(hwnd, None);
+
+            // 附加到目标窗口的线程，以便可以操作它
+            if target_thread_id != foreground_thread_id
+                && AttachThreadInput(foreground_thread_id, target_thread_id, BOOL::from(true))
+                    .as_bool()
+            {
+                // 将目标窗口设置为前台
+                let bool = SetForegroundWindow(hwnd);
+                println!("bool:{:?}", bool);
+                // SetFocus(hwnd);
+                send_paste_command();
+                thread::sleep(Duration::from_secs(3));
+                // 在完成操作后，取消附加
+                AttachThreadInput(foreground_thread_id, target_thread_id, BOOL::from(false));
             }
-            win_title(hwnd);
-            // 模拟做一些工作...
-            thread::sleep(Duration::from_secs(5));
-
-            // 将焦点切换回之前保存的窗口
-            // 如果窗口被最小化，先恢复它
-            // ShowWindow(GetForegroundWindow(), SW_MINIMIZE);
-            // thread::sleep(Duration::from_secs(1));
-            // 获取程序 A 和程序 B 的线程 ID
-            let clipa=GetForegroundWindow();
-
-            let target_thread_id = GetCurrentThreadId();
-            let current_thread_id  = GetWindowThreadProcessId(hwnd, null_mut());
-
-            // let current_thread_id = GetWindowThreadProcessId(clipa, null_mut());
-            // let target_thread_id  = GetWindowThreadProcessId(hwnd, null_mut());
-            println!("target_thread_id:{}, current_thread_id:{}", target_thread_id, current_thread_id);
-
-
-            // 附加程序 A 的输入线程到程序 B
-            if current_thread_id != target_thread_id{
-                println!("GetFocus:{:?}",GetFocus());
-                if AttachThreadInput(current_thread_id, target_thread_id, true as i32) == 0 {
-                    println!("附加输入线程失败。");
-                    return;
-                }
-
-                let timeout: u32 = 0;
-                // SystemParametersInfoW(
-                //     SPI_SETFOREGROUNDLOCKTIMEOUT,
-                //     0,
-                //     &timeout as *const _ as PVOID,
-                //     0
-                // );
-                BringWindowToTop(hwnd);
-                SetForegroundWindow(hwnd);
-
-                let set_focus = SetFocus(hwnd);
-                println!("SetFocus:{:?}",set_focus);
-                println!("GetFocus:{:?}",GetFocus());
-                win_title(hwnd);
-                win_title(GetFocus());
-                send_key_input(hwnd, 0x51);
-                // 分离输入线程
-                let detach = AttachThreadInput(current_thread_id, target_thread_id, false as i32);
-                if detach == 0 {
-                    println!("分离输入线程失败。");
-                    return;
-                }
-
-            }
-
         }
     }
 }
-use winapi::um::winuser::{ WM_KEYDOWN, WM_KEYUP};
-fn send_key_input(hwnd: winapi::shared::windef::HWND, key: u16) {
-    unsafe {
-        // 模拟按键按下
-        SendMessageW(hwnd, WM_KEYDOWN, key as WPARAM, 0);
-        // 模拟字符输入，如果需要的话
-        // SendMessageW(hwnd, WM_CHAR, key as WPARAM, 0);
-        // 模拟按键释放
-        SendMessageW(hwnd, WM_KEYUP, key as WPARAM, 0);
-    }
-}
+
+use windows::Win32::UI::Input::KeyboardAndMouse::{
+    SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, VK_RETURN,
+};
+use windows::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_CONTROL, VK_V};
