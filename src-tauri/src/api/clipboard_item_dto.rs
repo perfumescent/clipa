@@ -1,6 +1,5 @@
-
-use serde::{Deserialize, Serialize};
 use crate::clipboard::database::{ClipboardContent, ClipboardItem};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ClipboardItemDTO {
@@ -10,7 +9,7 @@ pub struct ClipboardItemDTO {
     timestamp: i64,
 }
 
-impl ClipboardItemDTO{
+impl ClipboardItemDTO {
     pub fn new(item: ClipboardItem) -> Self {
         Self {
             id: item.id,

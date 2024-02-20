@@ -2,7 +2,6 @@
 mod tests {
     use tauri_app::clipboard::database::{ClipboardContent, ClipboardItem};
 
-
     #[test]
     fn test_clipboard_item_new() {
         let item = ClipboardItem::new(

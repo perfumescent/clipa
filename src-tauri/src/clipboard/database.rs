@@ -27,19 +27,6 @@ impl ClipboardItem {
             timestamp: Local::now().timestamp_millis(),
         }
     }
-    
-    pub fn to_dto(self) -> ClipboardItemDTO {
-        let content_type = match self.content {
-            ClipboardContent::Text(_) => "Text".to_string(),
-            ClipboardContent::Image(_) => "Image".to_string(),
-        };
-        ClipboardItemDTO {
-            id: self.id,
-            content_type,
-            summary: self.summary,
-            timestamp: self.timestamp,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

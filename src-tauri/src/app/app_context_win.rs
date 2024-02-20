@@ -1,18 +1,18 @@
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-static CLIPBOARD_CONTEXT_LOCK: Lazy<Mutex<ClipboardContext>> =
-    Lazy::new(|| Mutex::new(ClipboardContext::new()));
-pub(crate) struct ClipboardContext {
-    invoking_app_id: String,
-}
 
-impl ClipboardContext {
-    pub(crate) fn new() -> Self {
+use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
+use crate::clipboard::database::CLIPBOARD_DAO;
+use std::process::Command;
+use winapi::shared::windef::HWND;
+use winapi::um::winuser::GetForegroundWindow;
+use crate::app::app_context::{ClipaAppContext, CLIPBOARD_CONTEXT_LOCK};
+
+impl ClipaAppContext {
+    pub fn new() -> Self {
         Self {
             invoking_app_id: "".to_string(),
         }
     }
-    pub(crate) fn wakeup() {
+    pub fn wakeup() {
         get_front_most_window_application_id()
             .map(|app_id| {
                 println!("wakeup:{}", app_id);
@@ -22,7 +22,7 @@ impl ClipboardContext {
             .ok();
     }
 
-    pub(crate) fn paste_on_app(clipboard_item_id: String) {
+    pub fn paste_on_app(clipboard_item_id: String) {
         CLIPBOARD_DAO
             .query_clipboard_item(clipboard_item_id)
             .map(|item| {
@@ -43,9 +43,6 @@ impl ClipboardContext {
     }
 }
 
-use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
-use crate::clipboard::database::CLIPBOARD_DAO;
-use std::process::Command;
 
 fn simulate_paste() {
     let script = r#"
@@ -59,29 +56,15 @@ fn simulate_paste() {
     }
 }
 fn get_front_most_window_application_id() -> Result<String, std::io::Error> {
-    let script = r#"
-        tell application "System Events"
-            set frontmostApp to first application process whose frontmost is true
-            set appId to bundle identifier of frontmostApp
-            if appId is missing value then
-                set appId to name of frontmostApp
-            end if
-            return appId
-        end tell
-    "#;
-
-    let output = Command::new("osascript").arg("-e").arg(script).output()?;
-
-    if output.status.success() {
-        let result = String::from_utf8_lossy(&output.stdout);
-        println!("front_most_window_application_id:{}", result.to_string());
-        Ok(result.to_string())
-    } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Failed to get front most window application id",
-        ))
+    // 获取当前前台窗口的句柄
+    unsafe {
+        let hwnd: HWND = GetForegroundWindow();
+        if hwnd.is_null() {
+            eprintln!("No foreground window.");
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "No foreground window."));
+        }
     }
+    Ok("".to_string())
 }
 fn focus_on_window(application_id: String) {
     let script = format!(
