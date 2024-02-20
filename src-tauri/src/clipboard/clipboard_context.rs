@@ -43,8 +43,8 @@ impl ClipboardContext {
     }
 }
 
-use crate::clipboard::clipboard_gateway::OsClipboardGateway;
-use crate::clipboard::dao::CLIPBOARD_DAO;
+use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
+use crate::clipboard::database::CLIPBOARD_DAO;
 use std::process::Command;
 
 fn simulate_paste() {

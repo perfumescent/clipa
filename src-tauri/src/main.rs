@@ -2,9 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod clipboard;
+mod api;
 
 use crate::clipboard::clipboard_listener::ClipboardListener;
-use crate::clipboard::cmd::{paste, query_clipboard_items, wakeup};
+use api::cmd::{paste, query_clipboard_items, wakeup};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]

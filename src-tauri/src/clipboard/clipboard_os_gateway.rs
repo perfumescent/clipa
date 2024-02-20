@@ -1,7 +1,7 @@
 
 use arboard::{Clipboard, Error};
 use once_cell::sync::Lazy;
-use crate::clipboard::dao::{ClipboardContent, ClipboardItem};
+use crate::clipboard::database::{ClipboardContent, ClipboardItem};
 use crate::clipboard::clipboard_image::ClipboardImage;
 
 use std::sync::{Mutex};

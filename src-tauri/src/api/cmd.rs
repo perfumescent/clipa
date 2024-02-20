@@ -1,5 +1,6 @@
+use crate::api::clipboard_item_dto::ClipboardItemDTO;
 use crate::clipboard::clipboard_context::ClipboardContext;
-use crate::clipboard::dao::{CLIPBOARD_DAO, ClipboardItemDTO};
+use crate::clipboard::database::{CLIPBOARD_DAO};
 
 #[tauri::command]
 pub fn wakeup() {
@@ -13,7 +14,7 @@ pub fn paste(clipboard_item_id: String) {
 #[tauri::command]
 pub fn query_clipboard_items() -> Vec<ClipboardItemDTO> {
     let vec = CLIPBOARD_DAO.read_all_clipboard_items().unwrap_or(Vec::new());
-    vec.into_iter().map(|item| item.to_dto()).collect()
+    vec.into_iter().map(|item| ClipboardItemDTO::new(item)).collect()
 }
 
 

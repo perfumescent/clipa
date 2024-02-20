@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use tauri_app::clipboard::dao::{ClipboardContent, ClipboardItem};
+    use tauri_app::clipboard::database::{ClipboardContent, ClipboardItem};
 
 
     #[test]

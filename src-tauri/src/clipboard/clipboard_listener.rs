@@ -1,7 +1,7 @@
 use clipboard_master::{CallbackResult, ClipboardHandler, Master};
 
-use crate::clipboard::clipboard_gateway::OsClipboardGateway;
-use crate::clipboard::dao::CLIPBOARD_DAO;
+use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
+use crate::clipboard::database::CLIPBOARD_DAO;
 use std::io::Error;
 use std::{panic, thread};
 

@@ -12,18 +12,12 @@ pub enum ClipboardContent {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ClipboardItem {
-    id: String,
+    pub(crate) id: String,
     pub(crate) content: ClipboardContent,
-    summary: String,
-    timestamp: i64,
+    pub(crate) summary: String,
+    pub(crate) timestamp: i64,
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ClipboardItemDTO {
-    id: String,
-    content_type: String,
-    summary: String,
-    timestamp: i64,
-}
+
 impl ClipboardItem {
     pub fn new(content: ClipboardContent, summary: String) -> Self {
         Self {
