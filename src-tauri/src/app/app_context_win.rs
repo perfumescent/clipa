@@ -18,11 +18,6 @@ use crate::dao::database::CLIPBOARD_DAO;
 
 static HWND_LOCK: Lazy<Mutex<HWND>> = Lazy::new(|| Mutex::new(HWND::default()));
 impl ClipaAppContext {
-    pub fn new() -> Self {
-        Self {
-            invoking_app_id: "".to_string(),
-        }
-    }
     pub fn wakeup() {
         unsafe {
             // 获取当前前台窗口的句柄

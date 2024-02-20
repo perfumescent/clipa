@@ -24,7 +24,7 @@ fn main() {
     // });
 
     tauri::Builder::default()
-        .setup(|app| Ok(()))
+        .setup(|_app| Ok(()))
         .invoke_handler(tauri::generate_handler![
             greet,
             wakeup,

@@ -2,20 +2,20 @@
 use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
 use crate::clipboard::database::CLIPBOARD_DAO;
 use std::process::Command;
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
 use crate::app::app_context::{ClipaAppContext, CLIPBOARD_CONTEXT_LOCK};
 
+static WINDOW_APP_ID_LOCK: Lazy<Mutex<String>> =
+    Lazy::new(|| Mutex::new(String::new()));
 impl ClipaAppContext {
-    pub fn new() -> Self {
-        Self {
-            invoking_app_id: "".to_string(),
-        }
-    }
     pub fn wakeup() {
         get_front_most_window_application_id()
             .map(|app_id| {
                 println!("wakeup:{}", app_id);
-                let mut context = CLIPBOARD_CONTEXT_LOCK.lock().unwrap();
-                context.invoking_app_id = app_id;
+                WINDOW_APP_ID_LOCK.lock().map(|mut lock| {
+                    *lock = app_id;
+                })
             })
             .ok();
     }
@@ -25,10 +25,11 @@ impl ClipaAppContext {
             .query_clipboard_item(clipboard_item_id)
             .map(|item| {
                 OsClipboardGateway::set(item)
-                    .map(|()| {
-                        let context = CLIPBOARD_CONTEXT_LOCK.lock().unwrap();
-                        focus_on_window(context.invoking_app_id.clone());
-                        simulate_paste();
+                    .map(|| {
+                        WINDOW_APP_ID_LOCK.lock().map(|lock| {
+                            focus_on_window(lock.clone());
+                            simulate_paste();
+                        })
                     })
                     .map_err(|e| {
                         eprintln!("Failed to set OsClipboard: {}", e);
