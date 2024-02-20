@@ -1,45 +1,13 @@
-use crate::clipboard::clipboard_image::ClipboardImage;
-use chrono::Local;
+
 use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
 use sled::Db;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum ClipboardContent {
-    Text(String),
-    Image(ClipboardImage),
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ClipboardItem {
-    pub(crate) id: String,
-    pub(crate) content: ClipboardContent,
-    pub(crate) summary: String,
-    pub(crate) timestamp: i64,
-}
-
-impl ClipboardItem {
-    pub fn new(content: ClipboardContent, summary: String) -> Self {
-        Self {
-            id: uuid::Uuid::new_v4().to_string(),
-            content,
-            summary,
-            timestamp: Local::now().timestamp_millis(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ContentType {
-    Text,
-    Image, // 图片以文件路径或Base64编码存储
-}
+use crate::dao::clipboard_item::ClipboardItem;
 
 pub(crate) struct ClipboardDao {
     db: Db,
 }
 
-pub(crate) static CLIPBOARD_DAO: Lazy<ClipboardDao> = Lazy::new(|| ClipboardDao::new().unwrap());
+pub static CLIPBOARD_DAO: Lazy<ClipboardDao> = Lazy::new(|| ClipboardDao::new().unwrap());
 
 impl ClipboardDao {
     // 初始化数据库并创建 ClipboardManager 实例

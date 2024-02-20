@@ -1,4 +1,4 @@
-use crate::clipboard::database::{ClipboardContent, ClipboardItem};
+use crate::dao::clipboard_item::{ClipboardContent, ClipboardItem};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]

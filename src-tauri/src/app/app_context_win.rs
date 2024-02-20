@@ -1,6 +1,5 @@
 
 use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
-use crate::clipboard::database::CLIPBOARD_DAO;
 
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
@@ -14,6 +13,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_CONTROL, VK_V};
+use crate::dao::database::CLIPBOARD_DAO;
 
 
 static HWND_LOCK: Lazy<Mutex<HWND>> = Lazy::new(|| Mutex::new(HWND::default()));

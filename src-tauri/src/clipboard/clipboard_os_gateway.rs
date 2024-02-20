@@ -1,5 +1,4 @@
 use crate::clipboard::clipboard_image::ClipboardImage;
-use crate::clipboard::database::{ClipboardContent, ClipboardItem};
 use arboard::{Clipboard, Error};
 use once_cell::sync::Lazy;
 
@@ -53,6 +52,7 @@ impl OsClipboardGateway {
 }
 
 use std::process::Command;
+use crate::dao::clipboard_item::{ClipboardContent, ClipboardItem};
 
 fn simulate_paste() {
     let script = r#"

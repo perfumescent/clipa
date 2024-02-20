@@ -1,6 +1,6 @@
 use crate::api::clipboard_item_dto::ClipboardItemDTO;
 use crate::app::app_context::ClipaAppContext;
-use crate::clipboard::database::CLIPBOARD_DAO;
+use crate::dao::database::CLIPBOARD_DAO;
 
 #[tauri::command]
 pub fn wakeup() {
