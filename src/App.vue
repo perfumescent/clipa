@@ -3,20 +3,14 @@
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import List from "./components/List.vue";
 import { invoke } from "@tauri-apps/api/tauri";
+import { appWindow } from '@tauri-apps/api/window';
 
-
-
-function wakeup() {
+async function wakeup() {
   invoke("wakeup").then((res) => {
     console.log("wakeup", res);
   });
-  
-  // sleep 1 second
-  setTimeout(() => {
-    invoke("paste", ).then((res) => {
-      console.log("wakeup", res);
-    });
-  }, 1000);
+  await appWindow.show();
+  await appWindow.setFocus();
 }
 
 

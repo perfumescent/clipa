@@ -1,10 +1,10 @@
 
 use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
-use crate::clipboard::database::CLIPBOARD_DAO;
 use std::process::Command;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use crate::app::app_context::{ClipaAppContext, CLIPBOARD_CONTEXT_LOCK};
+use crate::app::app_context::{ClipaAppContext};
+use crate::dao::database::CLIPBOARD_DAO;
 
 static WINDOW_APP_ID_LOCK: Lazy<Mutex<String>> =
     Lazy::new(|| Mutex::new(String::new()));
@@ -25,8 +25,9 @@ impl ClipaAppContext {
             .query_clipboard_item(clipboard_item_id)
             .map(|item| {
                 OsClipboardGateway::set(item)
-                    .map(|| {
+                    .map(|()| {
                         WINDOW_APP_ID_LOCK.lock().map(|lock| {
+                            println!("paste_on_app lock:{}",lock.clone());
                             focus_on_window(lock.clone());
                             simulate_paste();
                         })
@@ -70,8 +71,8 @@ fn get_front_most_window_application_id() -> Result<String, std::io::Error> {
 
     if output.status.success() {
         let result = String::from_utf8_lossy(&output.stdout);
-        println!("front_most_window_application_id:{}", result.to_string());
-        Ok(result.to_string())
+        println!("front_most_window_application_id: {}", result.to_string());
+        Ok(result.trim().to_string())
     } else {
         Err(std::io::Error::new(
             std::io::ErrorKind::Other,
@@ -81,16 +82,19 @@ fn get_front_most_window_application_id() -> Result<String, std::io::Error> {
 }
 fn focus_on_window(application_id: String) {
     let script = format!(
-        r#"
-        tell application id {} to activate
-    "#,
+        r#"tell application id "{}" to activate"#,
         application_id
     );
-
+println!("focus_on_window: {}", script);
     Command::new("osascript")
         .arg("-e")
         .arg(script)
         .output()
+        .map(|output| {
+            if !output.status.success() {
+                eprintln!("Error: {}", String::from_utf8_lossy(&output.stderr));
+            }
+        })
         .map_err(|e| {
             eprintln!("Failed to focus_on_window {}: {}", application_id, e);
         })

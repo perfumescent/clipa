@@ -36,6 +36,7 @@ impl ClipboardListener {
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) -> CallbackResult {
         println!("*********Clipboard changed***********");
+        // todo 去重
         OsClipboardGateway::get()
             .map(|item| {
                 CLIPBOARD_DAO.insert_clipboard_item(item).map_err(|e| {

@@ -4,7 +4,7 @@
     <a-input-search  placeholder="Please enter something" @search="query"/>
 
   <a-empty v-if="data.length===0"/>
-  <a-table v-else :columns="columns" :data="data" :column-resizable="true" size="mini">
+  <a-table v-else :columns="columns" :data="data" :column-resizable="true" size="mini" @cell-dblclick="clickCell" :show-header="false">
 
       <template #summary="{ record }" >
         <div v-if="record.content_type === 'Image'">
@@ -16,8 +16,9 @@
 
       </template>
     <template #op="{ record }" >
-      <a-button @click="$modal.info({ title:'Name', content:record.name })">view</a-button>
-
+      <a-button @click="select(record)" type="text">
+        <template #icon><icon-copy /></template>
+      </a-button>
     </template>
   </a-table>
 
@@ -27,7 +28,8 @@
 <script setup lang="ts">
 import { ref} from 'vue';
 import { invoke } from "@tauri-apps/api/tauri";
-
+import {TableData} from "@arco-design/web-vue";
+import { appWindow } from '@tauri-apps/api/window';
 const columns = [
   {
     title: 'summary',
@@ -50,6 +52,19 @@ function query() {
     data.value = res as ClipboardItemDTO[];
   });
 }
+
+function select(record: ClipboardItemDTO) {
+  appWindow.hide();
+  invoke("paste",{clipboardItemId:record.id}).then((res ) => {
+    console.log("query_clipboard_items", res);
+    data.value = res as ClipboardItemDTO[];
+  });
+}
+function clickCell(record: TableData) {
+  const tableData = record as ClipboardItemDTO;
+  select(tableData);
+}
+query();
 </script>
 <style scoped>
 .ellipsis-text {
@@ -58,6 +73,7 @@ function query() {
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%; /* 使得元素宽度适应父容器 */
+  user-select: none;
 }
 
 </style>

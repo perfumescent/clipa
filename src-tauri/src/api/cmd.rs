@@ -8,6 +8,7 @@ pub fn wakeup() {
 }
 #[tauri::command]
 pub fn paste(clipboard_item_id: String) {
+    println!("paste:{}", clipboard_item_id);
     ClipaAppContext::paste_on_app(clipboard_item_id);
 }
 
