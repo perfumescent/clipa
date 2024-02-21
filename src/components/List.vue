@@ -1,16 +1,16 @@
 
 <template>
 
-    <a-input-search  placeholder="Please enter something" @search="query"/>
+
 
   <a-empty v-if="data.length===0"/>
-  <a-table v-else :columns="columns" :data="data" :column-resizable="true" size="mini" @cell-dblclick="clickCell" :show-header="false">
+  <a-table v-else :columns="columns" :data="data" :column-resizable="true" size="large" @cell-dblclick="clickCell" :pagination="false"  style="background-color: rgba(255, 255, 255, 0)">
 
       <template #summary="{ record }" >
         <div v-if="record.content_type === 'Image'">
           <a-image :src="record.summary" height="100"/>
         </div>
-        <div v-else class="ellipsis-text">
+        <div v-else class="ellipsis-text" >
           {{ record.summary }}
         </div>
 
@@ -21,7 +21,6 @@
       </a-button>
     </template>
   </a-table>
-
 
 </template>
 

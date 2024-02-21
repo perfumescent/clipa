@@ -6,6 +6,7 @@ mod app;
 mod clipboard;
 mod dao;
 
+use tauri::Manager;
 use crate::clipboard::clipboard_listener::ClipboardListener;
 use api::cmd::{paste, query_clipboard_items, wakeup};
 
@@ -24,7 +25,9 @@ fn main() {
     // });
 
     tauri::Builder::default()
-        .setup(|_app| Ok(()))
+        .setup(|app| {
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             wakeup,
