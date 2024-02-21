@@ -10,12 +10,14 @@ async function wakeup() {
     console.log("wakeup", res);
   });
   await appWindow.show();
+  await appWindow.center();
   await appWindow.setFocus();
 }
 
 
 import {register} from '@tauri-apps/api/globalShortcut';
 register('Command+Control+V', wakeup);
+register('alt+space', wakeup);
 
 </script>
 
@@ -25,4 +27,3 @@ register('Command+Control+V', wakeup);
     <List/>
 
 </template>
-
