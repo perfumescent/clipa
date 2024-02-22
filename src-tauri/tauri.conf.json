@@ -10,7 +10,6 @@
     "version": "0.0.0"
   },
   "tauri": {
-    "macOSPrivateApi": true,
     "allowlist": {
       "all": false,
       "shell": {
@@ -36,8 +35,7 @@
         "title": "Clipa",
         "width": 800,
         "height": 600,
-        "decorations": false,
-        "transparent": true
+        "decorations": false
       }
     ],
     "security": {

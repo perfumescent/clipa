@@ -34,7 +34,7 @@ export default defineConfig(async () => ({
                     // 'color-bg-white': 'rgba(255, 255, 255, 0.5)', // 修改为半透明背景
                     // 'color-fill-1': 'rgba(255, 255, 255, 0.5)', // 修改为半透明背景
                     // 'color-fill-2': 'rgba(255, 255, 255, 0.5)', // 修改为半透明背景
-                    'table-color-bg-body-cell': 'rgba(255, 255, 255, 0)', // 修改为半透明背景
+                    // 'table-color-bg-body-cell': 'rgba(255, 255, 255, 0)', // 修改为半透明背景
                     // 根据需要继续添加其他变量修改
                 },
                 javascriptEnabled: true,

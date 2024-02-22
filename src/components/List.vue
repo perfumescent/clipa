@@ -1,52 +1,65 @@
-
 <template>
 
 
+  <a-scrollbar type="embed">
+    <a-empty v-if="data.length===0"/>
+    <div  v-else>
+      <a-input-search placeholder="Please enter something" @search="query"/>
+      <a-table :columns="columns" :data="data" :column-resizable="true" size="large" @cell-dblclick="clickCell"
+                 >
 
-  <a-empty v-if="data.length===0"/>
-  <a-table v-else :columns="columns" :data="data" :column-resizable="true" size="large" @cell-dblclick="clickCell" :pagination="false"  style="background-color: rgba(255, 255, 255, 0)">
+        <template #summary="{ record }">
+          <div v-if="record.content_type === 'Image'">
+            <a-image :src="record.summary" height="100"/>
+          </div>
+          <div v-else class="ellipsis-text">
+            {{ record.summary }}
+          </div>
 
-      <template #summary="{ record }" >
-        <div v-if="record.content_type === 'Image'">
-          <a-image :src="record.summary" height="100"/>
-        </div>
-        <div v-else class="ellipsis-text" >
-          {{ record.summary }}
-        </div>
+        </template>
+        <template #op="{ record }">
+          <a-button @click="select(record)" type="text">
+            <template #icon>
+              <icon-copy/>
+            </template>
+          </a-button>
+        </template>
+      </a-table>
 
-      </template>
-    <template #op="{ record }" >
-      <a-button @click="select(record)" type="text">
-        <template #icon><icon-copy /></template>
-      </a-button>
-    </template>
-  </a-table>
+    </div>
+  </a-scrollbar>
 
 </template>
 
 <script setup lang="ts">
-import { ref} from 'vue';
-import { invoke } from "@tauri-apps/api/tauri";
+import {ref} from 'vue';
+import {invoke} from "@tauri-apps/api/tauri";
 import {TableData} from "@arco-design/web-vue";
-import { appWindow } from '@tauri-apps/api/window';
+import {appWindow} from '@tauri-apps/api/window';
+const scrollbarProps = {
+  type: 'embed'
+}
 const columns = [
   {
     title: 'summary',
-    dataIndex: 'summary',slotName: 'summary',ellipsis: true
+    dataIndex: 'summary', slotName: 'summary', ellipsis: true
   },
   {
-    title: 'op',slotName: 'op',width: 80
+    title: 'op', slotName: 'op', width: 80
   }
 ];
+
 interface ClipboardItemDTO {
   id: string;
   content_type: string;
   summary: string;
   timestamp: number;
 }
+
 const data = ref<ClipboardItemDTO[]>([]);
+
 function query() {
-  invoke("query_clipboard_items").then((res ) => {
+  invoke("query_clipboard_items").then((res) => {
     console.log("query_clipboard_items", res);
     data.value = res as ClipboardItemDTO[];
   });
@@ -54,15 +67,17 @@ function query() {
 
 function select(record: ClipboardItemDTO) {
   appWindow.hide();
-  invoke("paste",{clipboardItemId:record.id}).then((res ) => {
+  invoke("paste", {clipboardItemId: record.id}).then((res) => {
     console.log("query_clipboard_items", res);
     data.value = res as ClipboardItemDTO[];
   });
 }
+
 function clickCell(record: TableData) {
   const tableData = record as ClipboardItemDTO;
   select(tableData);
 }
+
 query();
 </script>
 <style scoped>
