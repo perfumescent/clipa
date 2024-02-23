@@ -1,7 +1,7 @@
 <template>
 
 
-  <a-scrollbar type="embed">
+<!--  <a-scrollbar type="embed">-->
     <a-empty v-if="data.length===0"/>
     <div  v-else>
       <a-input-search placeholder="Please enter something" @search="query"/>
@@ -27,7 +27,7 @@
       </a-table>
 
     </div>
-  </a-scrollbar>
+<!--  </a-scrollbar>-->
 
 </template>
 
@@ -36,9 +36,7 @@ import {ref} from 'vue';
 import {invoke} from "@tauri-apps/api/tauri";
 import {TableData} from "@arco-design/web-vue";
 import {appWindow} from '@tauri-apps/api/window';
-const scrollbarProps = {
-  type: 'embed'
-}
+
 const columns = [
   {
     title: 'summary',

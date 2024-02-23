@@ -6,9 +6,10 @@ mod app;
 mod clipboard;
 mod dao;
 
-use tauri::Manager;
 use crate::clipboard::clipboard_listener::ClipboardListener;
 use api::cmd::{paste, query_clipboard_items, wakeup};
+use tauri::Manager;
+use window_shadows::set_shadow;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -26,6 +27,11 @@ fn main() {
 
     tauri::Builder::default()
         .setup(|app| {
+            app.windows().into_values().for_each(|window| {
+                set_shadow(&window, true)
+                    .map_err(|e| println!("Failed to set {} shadow: {}", window.label(), e))
+                    .ok();
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -37,5 +43,3 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-
