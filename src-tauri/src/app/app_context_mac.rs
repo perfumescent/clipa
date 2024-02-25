@@ -1,4 +1,4 @@
-
+use std::ops::Deref;
 use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
 use std::process::Command;
 use std::sync::Mutex;
@@ -27,8 +27,8 @@ impl ClipaAppContext {
                 OsClipboardGateway::set(item)
                     .map(|()| {
                         WINDOW_APP_ID_LOCK.lock().map(|lock| {
-                            println!("paste_on_app lock:{}",lock.clone());
-                            focus_on_window(lock.clone());
+                            println!("paste_on_app lock:{}",lock);
+                            focus_on_window(lock.deref());
                             simulate_paste();
                         })
                     })
@@ -80,7 +80,7 @@ fn get_front_most_window_application_id() -> Result<String, std::io::Error> {
         ))
     }
 }
-fn focus_on_window(application_id: String) {
+fn focus_on_window(application_id: &String) {
     let script = format!(
         r#"tell application id "{}" to activate"#,
         application_id

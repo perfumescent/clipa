@@ -11,7 +11,7 @@ import {appWindow} from "@tauri-apps/api/window";
     padding: '35px 16px 16px 16px',
     userSelect: 'none', cursor: 'move'
   }" data-tauri-drag-region>
-    <a-page-header title="Clipa" subtitle=" 2.0" style="cursor: default;padding: 0">
+    <a-page-header title="Clipa" subtitle=" alpha" style="cursor: default;padding: 0">
       <template #back-icon>
         <icon-close @click="appWindow.minimize()"/>
       </template>

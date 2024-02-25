@@ -34,17 +34,19 @@ impl OsClipboardGateway {
             .clipboard
             .get_text()
             .map(|text| {
+                let summary = text.chars().take(100).collect::<String>();
                 ClipboardItem::new(
-                    ClipboardContent::Text(text.clone()),
-                    text.chars().take(100).collect::<String>(),
+                    ClipboardContent::Text(text),
+                    summary,
                 )
             })
             .or_else(|_e| {
                 gateway.clipboard.get_image().map(|image_data| {
                     let clipboard_image = ClipboardImage::from(image_data);
+                    let base64 = clipboard_image.to_base64_jpeg_thumbnail();
                     ClipboardItem::new(
-                        ClipboardContent::Image(clipboard_image.clone()),
-                        clipboard_image.to_base64_jpeg_thumbnail(),
+                        ClipboardContent::Image(clipboard_image),
+                        base64,
                     )
                 })
             })

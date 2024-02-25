@@ -20,7 +20,7 @@ impl ClipboardImage {
         }
     }
 
-    pub(crate) fn to_base64_jpeg_thumbnail(self) -> String {
+    pub(crate) fn to_base64_jpeg_thumbnail(&self) -> String {
         let width_u32 = u32::try_from(self.width).expect("width is too large to fit into a u32");
         let height_u32 = u32::try_from(self.height).expect("height is too large to fit into a u32");
 
@@ -29,7 +29,7 @@ impl ClipboardImage {
         let new_width = (width_u32 * new_height) / height_u32;
         // 使用 ImageBuffer 来创建一个 RgbaImage
 
-        ImageBuffer::from_raw(new_width, new_height, self.bytes).map_or(
+        ImageBuffer::from_raw(new_width, new_height, self.bytes.clone()).map_or(
             "Failed to parse image".to_string(),
             |thumbnail: RgbaImage| {
                 // 将图像编码为低质量的 JPEG

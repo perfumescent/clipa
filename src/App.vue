@@ -52,7 +52,7 @@ register('alt+space', wakeup);
 }
 .header {
   /* 确定头部的高度 */
-  height: 150px;
+  height: 100px;
 }
 .content {
   /* 这里不需要设置高度，它将自动填充剩余空间 */

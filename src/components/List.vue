@@ -1,38 +1,37 @@
 <template>
 
 
-<!--  <a-scrollbar type="embed">-->
-    <a-empty v-if="data.length===0"/>
-    <div  v-else>
-      <a-input-search placeholder="Please enter something" @search="query"/>
-      <a-table :columns="columns" :data="data" :column-resizable="true" size="large" @cell-dblclick="clickCell"
-                 >
+  <a-empty v-if="data.length===0"/>
+  <div v-else>
+    <!--      <a-input-search placeholder="Please enter something" @search="query"/>-->
+    <a-table ref="myTable" :columns="columns" :data="data" :column-resizable="true" size="small"
+             @cell-dblclick="clickCell" :show-header="false"
+             :pagination="false" row-key="id">
+      <!--        :pagination="{size:'mini',hideOnSinglePage:true,simple:true}"-->
+      <template #summary="{ record }">
+        <div v-if="record.content_type === 'Image'">
+          <a-image :src="record.summary" height="100"/>
+        </div>
+        <div v-else class="ellipsis-text">
+          {{ record.summary }}
+        </div>
 
-        <template #summary="{ record }">
-          <div v-if="record.content_type === 'Image'">
-            <a-image :src="record.summary" height="100"/>
-          </div>
-          <div v-else class="ellipsis-text">
-            {{ record.summary }}
-          </div>
+      </template>
+      <template #op="{ record }">
+        <a-button @click="select(record)" type="text">
+          <template #icon>
+            <icon-copy/>
+          </template>
+        </a-button>
+      </template>
+    </a-table>
 
-        </template>
-        <template #op="{ record }">
-          <a-button @click="select(record)" type="text">
-            <template #icon>
-              <icon-copy/>
-            </template>
-          </a-button>
-        </template>
-      </a-table>
-
-    </div>
-<!--  </a-scrollbar>-->
+  </div>
 
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
+import {onMounted, onUnmounted, Ref, ref} from 'vue';
 import {invoke} from "@tauri-apps/api/tauri";
 import {TableData} from "@arco-design/web-vue";
 import {appWindow} from '@tauri-apps/api/window';
@@ -77,6 +76,45 @@ function clickCell(record: TableData) {
 }
 
 query();
+
+
+// 用于存储当前选中行的id
+const selectedRowKeys: Ref<string[]> = ref([]);
+// 当前选中行的索引
+const currentRowIndex: Ref<number> = ref(-1);
+
+// 更新选中行的处理函数
+const handleRowSelectionChange = (newSelectedRowKeys: string[]) => {
+  selectedRowKeys.value = newSelectedRowKeys;
+};
+const myTable = ref();
+// 处理键盘事件的函数
+const handleKeyDown = (event: KeyboardEvent) => {
+  console.log(event);
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault(); // 防止页面滚动
+
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    // 计算新的选中行索引，确保它在有效范围内
+    let newIndex = (currentRowIndex.value + direction) % data.value.length;
+    newIndex = newIndex < 0 ? 0 : newIndex;
+    // 更新当前选中行的索引和键值
+    currentRowIndex.value = newIndex;
+    myTable.value.select(selectedRowKeys.value, false);
+    selectedRowKeys.value = [data.value[newIndex].id];
+    myTable.value.select(selectedRowKeys.value, true);
+    console.log(data.value[newIndex]);
+  }
+};
+
+// 在组件挂载时添加键盘事件监听器，在卸载时移除
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 </script>
 <style scoped>
 .ellipsis-text {
@@ -86,6 +124,7 @@ query();
   text-overflow: ellipsis;
   width: 100%; /* 使得元素宽度适应父容器 */
   user-select: none;
+  font-size: 12px;
 }
 
 </style>
