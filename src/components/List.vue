@@ -3,11 +3,9 @@
 
   <a-empty v-if="data.length===0"/>
   <div v-else>
-    <!--      <a-input-search placeholder="Please enter something" @search="query"/>-->
     <a-table ref="myTable" :columns="columns" :data="data" :column-resizable="true" size="small"
              @cell-dblclick="clickCell" :show-header="false"
              :pagination="false" row-key="id">
-      <!--        :pagination="{size:'mini',hideOnSinglePage:true,simple:true}"-->
       <template #summary="{ record }">
         <div v-if="record.content_type === 'Image'">
           <a-image :src="record.summary" height="100"/>
@@ -31,11 +29,12 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, onUnmounted, Ref, ref} from 'vue';
+// 处理键盘事件的函数
+import {onMounted, onUnmounted, ref, nextTick, Ref} from 'vue';
 import {invoke} from "@tauri-apps/api/tauri";
 import {TableData} from "@arco-design/web-vue";
 import {appWindow} from '@tauri-apps/api/window';
-
+const myTable = ref();
 const columns = [
   {
     title: 'summary',
@@ -59,6 +58,10 @@ function query() {
   invoke("query_clipboard_items").then((res) => {
     console.log("query_clipboard_items", res);
     data.value = res as ClipboardItemDTO[];
+    nextTick().then(() => {
+      selectedRowIds.value = [data.value[0].id];
+      myTable.value.select(selectedRowIds.value, true);
+    });
   });
 }
 
@@ -66,7 +69,6 @@ function select(record: ClipboardItemDTO) {
   appWindow.hide();
   invoke("paste", {clipboardItemId: record.id}).then((res) => {
     console.log("query_clipboard_items", res);
-    data.value = res as ClipboardItemDTO[];
   });
 }
 
@@ -75,41 +77,62 @@ function clickCell(record: TableData) {
   select(tableData);
 }
 
-query();
-
-
 // 用于存储当前选中行的id
-const selectedRowKeys: Ref<string[]> = ref([]);
+const selectedRowIds: Ref<string[]> = ref([]);
 // 当前选中行的索引
-const currentRowIndex: Ref<number> = ref(-1);
+const currentRowIndex: Ref<number> = ref(0);
 
-// 更新选中行的处理函数
-const handleRowSelectionChange = (newSelectedRowKeys: string[]) => {
-  selectedRowKeys.value = newSelectedRowKeys;
-};
-const myTable = ref();
-// 处理键盘事件的函数
-const handleKeyDown = (event: KeyboardEvent) => {
+const handleKeyDown = async (event: KeyboardEvent) => {
   console.log(event);
+  if (event.key === 'Enter'){
+    clickCell(data.value[currentRowIndex.value]);
+  }
   if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
     event.preventDefault(); // 防止页面滚动
 
     const direction = event.key === 'ArrowDown' ? 1 : -1;
-    // 计算新的选中行索引，确保它在有效范围内
+    let oldIndex = currentRowIndex.value;
     let newIndex = (currentRowIndex.value + direction) % data.value.length;
-    newIndex = newIndex < 0 ? 0 : newIndex;
-    // 更新当前选中行的索引和键值
+    newIndex = newIndex < 0 ? data.value.length - 1 : newIndex; // 修正负索引
     currentRowIndex.value = newIndex;
-    myTable.value.select(selectedRowKeys.value, false);
-    selectedRowKeys.value = [data.value[newIndex].id];
-    myTable.value.select(selectedRowKeys.value, true);
-    console.log(data.value[newIndex]);
+
+    // 必须等待DOM更新来获取最新的行元素
+    // await nextTick();
+
+    const tableElement = document.querySelector('#app > section > main'); // 获取表格滚动容器
+    const rows = myTable.value.$el.querySelectorAll('.arco-table-tr'); // 获取所有行元素
+    const lastSelectedRowElement = rows[oldIndex]; // 通过索引访问
+    const selectedRowElement = rows[newIndex]; // 通过索引访问
+    if (selectedRowElement && tableElement) {
+      lastSelectedRowElement.style.backgroundColor = selectedRowElement.style.backgroundColor;
+      selectedRowElement.style.backgroundColor = 'rgb(106,161,255)';
+      console.log(lastSelectedRowElement.style.backgroundColor);
+      console.log(selectedRowElement.style.backgroundColor);
+      if (newIndex >= 0 && newIndex < rows.length) {
+        // 计算选中行顶部距离容器顶部的距离
+        let elementTop = selectedRowElement.offsetTop;
+
+        // 计算应该滚动的距离：元素顶部距离 - 容器高度的一半 + 元素高度的一半
+        let scrollTarget = elementTop - (tableElement.clientHeight / 2) + (selectedRowElement.clientHeight / 2);
+
+        // 使用Math.max确保不会滚动到负值
+        tableElement.scrollTop = Math.max(0, scrollTarget);
+      }
+
+    }
+
+
+    myTable.value.select(selectedRowIds.value, false);
+    selectedRowIds.value = [data.value[newIndex].id];
+    myTable.value.select(selectedRowIds.value, true);
   }
 };
+
 
 // 在组件挂载时添加键盘事件监听器，在卸载时移除
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
+  query();
 });
 
 onUnmounted(() => {
@@ -126,5 +149,4 @@ onUnmounted(() => {
   user-select: none;
   font-size: 12px;
 }
-
 </style>

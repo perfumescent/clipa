@@ -16,14 +16,18 @@ async function wakeup() {
 }
 
 
-import {register} from '@tauri-apps/api/globalShortcut';
+import {register, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import Header from "./components/Header.vue";
+import {onUnmounted} from "vue";
 
 register('Command+Control+V', wakeup);
 register('alt+space', wakeup);
-
+onUnmounted(() => {
+  unregisterAll().then(() => {
+    console.log('unregisterAll');
+  });
+});
 </script>
-
 <template>
 
 
