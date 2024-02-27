@@ -7,12 +7,16 @@ import {appWindow} from '@tauri-apps/api/window';
 
 // appWindow.setDecorations(false);
 async function wakeup() {
-  invoke("wakeup").then((res) => {
-    console.log("wakeup", res);
-  });
-  await appWindow.show();
-  await appWindow.center();
-  await appWindow.setFocus();
+  if(await appWindow.isMinimized() || !await appWindow.isVisible() ){
+    invoke("wakeup").then((res) => {
+      console.log("wakeup", res);
+    });
+    await appWindow.show();
+    appWindow.center();
+    appWindow.setFocus();
+  }else {
+    appWindow.hide();
+  }
 }
 
 
@@ -21,7 +25,7 @@ import Header from "./components/Header.vue";
 import {onUnmounted} from "vue";
 
 register('Command+Control+V', wakeup);
-register('alt+space', wakeup);
+register('control+space', wakeup);
 onUnmounted(() => {
   unregisterAll().then(() => {
     console.log('unregisterAll');

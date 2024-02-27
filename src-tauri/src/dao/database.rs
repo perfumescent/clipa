@@ -44,6 +44,9 @@ impl ClipboardDao {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let value = serde_json::to_vec(&item)?;
         self.db.insert(item.id, value)?;
+        // 检查，如果数据库中的剪贴项数量超过 500，删除最旧的100项剪贴项
+        if self.db.len() > 500 {
+        }
         Ok(())
     }
 
@@ -54,13 +57,22 @@ impl ClipboardDao {
     }
     // 读取所有剪贴项
     pub(crate) fn read_all_clipboard_items(
-        &self,
+        &self, keyword: &String
     ) -> Result<Vec<ClipboardItem>, Box<dyn std::error::Error>> {
         let mut items = Vec::new();
+
         for result in self.db.iter() {
             let (_key, value) = result?;
             serde_json::from_slice(&value)
-                .map(|item: ClipboardItem| items.push(item))
+                .map(|item: ClipboardItem| {
+                    if !keyword.is_empty() {
+                        if item.content.contain(keyword){
+                            items.push(item)
+                        }
+                    }else {
+                        items.push(item)
+                    }
+                })
                 .ok();
         }
 

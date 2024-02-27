@@ -27,8 +27,12 @@ impl ClipboardItem {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ContentType {
-    Text,
-    Image, // 图片以文件路径或Base64编码存储
+impl ClipboardContent{
+
+    pub(crate) fn contain(&self, keyword: &String) -> bool {
+        match self {
+            ClipboardContent::Text(text) => text.contains(keyword),
+            ClipboardContent::Image(_) => false
+        }
+    }
 }
