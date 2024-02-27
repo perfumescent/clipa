@@ -1,7 +1,7 @@
 use crate::clipboard::clipboard_image::ClipboardImage;
+use crate::dao::clipboard_item::{ClipboardContent, ClipboardItem};
 use arboard::{Clipboard, Error};
 use once_cell::sync::Lazy;
-use crate::dao::clipboard_item::{ClipboardContent, ClipboardItem};
 use std::sync::Mutex;
 
 static CLIPBOARD_GATEWAY_LOCK: Lazy<Mutex<OsClipboardGateway>> =
@@ -35,21 +35,14 @@ impl OsClipboardGateway {
             .get_text()
             .map(|text| {
                 let summary = text.chars().take(100).collect::<String>();
-                ClipboardItem::new(
-                    ClipboardContent::Text(text),
-                    summary,
-                )
+                ClipboardItem::new(ClipboardContent::Text(text), summary)
             })
             .or_else(|_e| {
                 gateway.clipboard.get_image().map(|image_data| {
                     let clipboard_image = ClipboardImage::from(image_data);
                     let base64 = clipboard_image.to_base64_jpeg_thumbnail();
-                    ClipboardItem::new(
-                        ClipboardContent::Image(clipboard_image),
-                        base64,
-                    )
+                    ClipboardItem::new(ClipboardContent::Image(clipboard_image), base64)
                 })
             })
     }
 }
-

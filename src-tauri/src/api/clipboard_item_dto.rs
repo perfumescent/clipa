@@ -6,7 +6,6 @@ pub struct ClipboardItemDTO {
     id: String,
     content_type: String,
     summary: String,
-    timestamp: i64,
 }
 
 impl ClipboardItemDTO {
@@ -18,7 +17,6 @@ impl ClipboardItemDTO {
                 ClipboardContent::Image(_) => "Image".to_string(),
             },
             summary: item.summary,
-            timestamp: item.timestamp,
         }
     }
 }

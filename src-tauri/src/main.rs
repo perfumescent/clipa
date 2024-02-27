@@ -7,7 +7,7 @@ mod clipboard;
 mod dao;
 
 use crate::clipboard::clipboard_listener::ClipboardListener;
-use api::cmd::{paste, query_clipboard_items, wakeup};
+use api::cmd::{delete_clipboard_item, paste, query_clipboard_items, wakeup};
 use tauri::Manager;
 use window_shadows::set_shadow;
 
@@ -38,7 +38,8 @@ fn main() {
             greet,
             wakeup,
             paste,
-            query_clipboard_items
+            query_clipboard_items,
+            delete_clipboard_item
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

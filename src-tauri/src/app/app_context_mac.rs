@@ -1,13 +1,12 @@
-use std::ops::Deref;
+use crate::app::app_context::ClipaAppContext;
 use crate::clipboard::clipboard_os_gateway::OsClipboardGateway;
+use crate::dao::database::CLIPBOARD_DAO;
+use once_cell::sync::Lazy;
+use std::ops::Deref;
 use std::process::Command;
 use std::sync::Mutex;
-use once_cell::sync::Lazy;
-use crate::app::app_context::{ClipaAppContext};
-use crate::dao::database::CLIPBOARD_DAO;
 
-static WINDOW_APP_ID_LOCK: Lazy<Mutex<String>> =
-    Lazy::new(|| Mutex::new(String::new()));
+static WINDOW_APP_ID_LOCK: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 impl ClipaAppContext {
     pub fn wakeup() {
         get_front_most_window_application_id()
@@ -27,7 +26,7 @@ impl ClipaAppContext {
                 OsClipboardGateway::set(item)
                     .map(|()| {
                         WINDOW_APP_ID_LOCK.lock().map(|lock| {
-                            println!("paste_on_app lock:{}",lock);
+                            println!("paste_on_app lock:{}", lock);
                             focus_on_window(lock.deref());
                             simulate_paste();
                         })
@@ -42,7 +41,6 @@ impl ClipaAppContext {
             .ok();
     }
 }
-
 
 fn simulate_paste() {
     let script = r#"
@@ -81,11 +79,8 @@ fn get_front_most_window_application_id() -> Result<String, std::io::Error> {
     }
 }
 fn focus_on_window(application_id: &String) {
-    let script = format!(
-        r#"tell application id "{}" to activate"#,
-        application_id
-    );
-println!("focus_on_window: {}", script);
+    let script = format!(r#"tell application id "{}" to activate"#, application_id);
+    println!("focus_on_window: {}", script);
     Command::new("osascript")
         .arg("-e")
         .arg(script)
