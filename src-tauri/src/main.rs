@@ -11,19 +11,9 @@ use api::cmd::{delete_clipboard_item, paste, query_clipboard_items, wakeup};
 use tauri::Manager;
 use window_shadows::set_shadow;
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 fn main() {
     ClipboardListener::run();
-    // thread::spawn(|| loop {
-    //     let vec = CLIPBOARD_DAO.read_all_clipboard_items().unwrap();
-    //     println!("clipboard items:{:?}", vec);
-    //     thread::sleep(std::time::Duration::from_secs(5));
-    // });
 
     tauri::Builder::default()
         .setup(|app| {
