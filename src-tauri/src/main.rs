@@ -25,7 +25,6 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             wakeup,
             paste,
             query_clipboard_items,

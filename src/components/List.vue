@@ -1,6 +1,7 @@
 <template>
   <a-empty v-if="data.length === 0" />
   <div v-else>
+    <a-input ref="myInput" v-model="inputKeyword" :style="{width:'320px'}" placeholder="Please enter something" allow-clear />
     <a-table
       ref="myTable"
       :columns="columns"
@@ -39,6 +40,7 @@ import { TableData } from "@arco-design/web-vue";
 import { appWindow } from "@tauri-apps/api/window";
 
 const myTable = ref();
+const myInput = ref();
 const columns = [
   {
     title: "summary",
@@ -61,9 +63,19 @@ interface ClipboardItemDTO {
 }
 
 const data = ref<ClipboardItemDTO[]>([]);
-
-function query() {
-  invoke("query_clipboard_items").then((res) => {
+const inputKeyword = ref("");
+const init = async () => {
+  inputKeyword.value = "";
+  query();
+}
+defineExpose({
+  init
+})
+function query(keyword?: string) {
+  if (keyword === undefined) {
+    keyword = "";
+  }
+  invoke("query_clipboard_items",{keyword:keyword}).then((res) => {
     console.log("query_clipboard_items", res);
     data.value = res as ClipboardItemDTO[];
     nextTick().then(() => {
@@ -131,7 +143,8 @@ const handleKeyDown = async (event: KeyboardEvent) => {
     selectedRowIds.value = [data.value[newIndex].id];
     myTable.value.select(selectedRowIds.value, true);
   } else {
-
+    // 如果有其他动作，则是选中输入框a-input，让输入框获取焦点
+    myInput.value.focus();
   }
 };
 
@@ -145,6 +158,7 @@ onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
 });
 </script>
+
 <style scoped>
 .ellipsis-text {
   display: block; /* 或者 inline-block */

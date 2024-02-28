@@ -14,10 +14,15 @@ pub fn paste(clipboard_item_id: String) {
 }
 
 #[tauri::command]
-pub fn query_clipboard_items() -> Vec<ClipboardItemDTO> {
+pub fn query_clipboard_items(keyword: String) -> Vec<ClipboardItemDTO> {
     println!("query_clipboard_items");
+    let param = if keyword.is_empty() {
+        None
+    } else {
+        Some(keyword)
+    };
     let vec = CLIPBOARD_DAO
-        .read_all_clipboard_items(None)
+        .read_all_clipboard_items(param)
         .unwrap_or(Vec::new());
     vec.into_iter()
         .map(|item| ClipboardItemDTO::new(item))
