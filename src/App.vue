@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import {invoke} from "@tauri-apps/api/tauri";
 import {appWindow} from '@tauri-apps/api/window';
-import List from "./components/List.vue";
-let listVue:<InstanceType<typeof List> | null>;
+
+const wakeupChild = () => {
+  document.dispatchEvent(new CustomEvent('init'));
+}
 async function wakeup() {
   if(await appWindow.isMinimized() || !await appWindow.isVisible() ){
     // 调用子组件List.vue的init函数
-    listVue.value?.init();
+    wakeupChild();
     invoke("wakeup").then((res) => {
       console.log("wakeup", res);
     });
@@ -22,14 +24,13 @@ async function wakeup() {
 
 import {register, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import Header from "./components/Header.vue";
-import {onMounted, onUnmounted, ref} from "vue";
+import {onMounted, onUnmounted} from "vue";
 
 register('Command+Control+V', wakeup);
 register('control+space', wakeup);
 
 onMounted(() => {
   console.log('onMounted');
-  listVue = ref<InstanceType<typeof List> | null>(null)
 });
 onUnmounted(() => {
   unregisterAll().then(() => {

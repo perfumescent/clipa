@@ -1,7 +1,7 @@
 <template>
+  <a-input ref="myInput" @input="value => query(value)" v-model="inputKeyword" placeholder="Please enter something" allow-clear />
   <a-empty v-if="data.length === 0" />
   <div v-else>
-    <a-input ref="myInput" v-model="inputKeyword" :style="{width:'320px'}" placeholder="Please enter something" allow-clear />
     <a-table
       ref="myTable"
       :columns="columns"
@@ -64,13 +64,11 @@ interface ClipboardItemDTO {
 
 const data = ref<ClipboardItemDTO[]>([]);
 const inputKeyword = ref("");
-const init = async () => {
+async function init ()  {
   inputKeyword.value = "";
   query();
 }
-defineExpose({
-  init
-})
+
 function query(keyword?: string) {
   if (keyword === undefined) {
     keyword = "";
@@ -148,10 +146,15 @@ const handleKeyDown = async (event: KeyboardEvent) => {
   }
 };
 
+
 // 在组件挂载时添加键盘事件监听器，在卸载时移除
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
-  query();
+  document.addEventListener('init', (event) => {
+    console.log(event);
+    init();
+  });
+  init();
 });
 
 onUnmounted(() => {
