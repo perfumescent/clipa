@@ -3,8 +3,11 @@ use crate::app::app_context::ClipaAppContext;
 use crate::dao::database::CLIPBOARD_DAO;
 
 #[tauri::command]
-pub fn wakeup() {
+pub fn wakeup(window: tauri::Window) {
     println!("wakeup");
+    window.outer_position().map(|pos| {
+        println!("window position: {:?}", pos);
+    }).ok();
     ClipaAppContext::wakeup();
 }
 #[tauri::command]

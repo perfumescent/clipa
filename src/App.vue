@@ -6,7 +6,10 @@ const wakeupChild = () => {
   document.dispatchEvent(new CustomEvent('init'));
 }
 async function wakeup() {
-  if(await appWindow.isMinimized() || !await appWindow.isVisible() ){
+  const minimized =await appWindow.isMinimized();
+  const visible = await appWindow.isVisible();
+  const focused = await appWindow.isFocused();
+  if( !visible || minimized  ){
     // 调用子组件List.vue的init函数
     wakeupChild();
     invoke("wakeup").then((res) => {
@@ -16,7 +19,10 @@ async function wakeup() {
     await appWindow.unminimize();
     await appWindow.center();
     await appWindow.setFocus();
-  }else {
+  }else if(!focused){
+    await appWindow.hide();
+    await wakeup();
+  } else {
     await appWindow.hide();
   }
 }
@@ -26,7 +32,7 @@ import {register, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import Header from "./components/Header.vue";
 import {onMounted, onUnmounted} from "vue";
 
-register('Command+Control+V', wakeup);
+register('Command+`', wakeup);
 register('control+space', wakeup);
 
 onMounted(() => {
