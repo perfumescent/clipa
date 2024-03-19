@@ -49,6 +49,7 @@ impl ClipboardDao {
                 .map_err(|e| eprintln!("Error when removing the oldest: {}", e))
                 .ok();
         }
+        println!("insert_clipboard_item: {:?}", item);
         self.db.insert(item.id, value)?;
         Ok(())
     }

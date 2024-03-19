@@ -1,5 +1,5 @@
 <template>
-  <a-input ref="myInput" @input="value => query(value)" v-model="inputKeyword" placeholder="Please enter something" allow-clear />
+  <a-input ref="myInput" v-if="showInput" @input="query" v-model="inputKeyword" allow-clear />
   <a-empty v-if="data.length === 0" />
   <div v-else>
     <a-table
@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 // 处理键盘事件的函数
-import { onMounted, onUnmounted, ref, nextTick, Ref } from "vue";
+import {onMounted, onUnmounted, ref, nextTick, Ref, watch} from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
 import { TableData } from "@arco-design/web-vue";
 import { appWindow } from "@tauri-apps/api/window";
@@ -64,20 +64,21 @@ interface ClipboardItemDTO {
 
 const data = ref<ClipboardItemDTO[]>([]);
 const inputKeyword = ref("");
+const showInput = ref(false);
 async function init ()  {
   inputKeyword.value = "";
+  showInput.value = false;
   query();
 }
 
-function query(keyword?: string) {
-  if (keyword === undefined) {
-    keyword = "";
-  }
-  invoke("query_clipboard_items",{keyword:keyword}).then((res) => {
+function query() {
+
+  invoke("query_clipboard_items",{keyword:inputKeyword.value}).then(async (res) => {
     console.log("query_clipboard_items", res);
     data.value = res as ClipboardItemDTO[];
-    nextTick().then(() => {
+    await nextTick(() => {
       selectedRowIds.value = [data.value[0].id];
+      console.log(selectedRowIds.value);
       myTable.value.select(selectedRowIds.value, true);
     });
   });
@@ -99,7 +100,11 @@ function clickCell(record: TableData) {
 const selectedRowIds: Ref<string[]> = ref([]);
 // 当前选中行的索引
 const currentRowIndex: Ref<number> = ref(0);
-
+// 监听selectedRowIds的变化，比较新旧两个值
+watch(selectedRowIds, (newVal, oldVal) => {
+  myTable.value.select(oldVal, false);
+  myTable.value.select(newVal, true);
+});
 const handleKeyDown = async (event: KeyboardEvent) => {
   console.log(event);
   if (event.key === "Enter") {
@@ -108,21 +113,14 @@ const handleKeyDown = async (event: KeyboardEvent) => {
     event.preventDefault(); // 防止页面滚动
 
     const direction = event.key === "ArrowDown" ? 1 : -1;
-    let oldIndex = currentRowIndex.value;
     let newIndex = (currentRowIndex.value + direction) % data.value.length;
     newIndex = newIndex < 0 ? data.value.length - 1 : newIndex; // 修正负索引
     currentRowIndex.value = newIndex;
 
     const tableElement = document.querySelector("#app > section > main"); // 获取表格滚动容器
     const rows = myTable.value.$el.querySelectorAll(".arco-table-tr"); // 获取所有行元素
-    const lastSelectedRowElement = rows[oldIndex]; // 通过索引访问
     const selectedRowElement = rows[newIndex]; // 通过索引访问
     if (selectedRowElement && tableElement) {
-      lastSelectedRowElement.style.backgroundColor =
-        selectedRowElement.style.backgroundColor;
-      selectedRowElement.style.backgroundColor = "rgb(106,161,255)";
-      console.log(lastSelectedRowElement.style.backgroundColor);
-      console.log(selectedRowElement.style.backgroundColor);
       if (newIndex >= 0 && newIndex < rows.length) {
         // 计算选中行顶部距离容器顶部的距离
         let elementTop = selectedRowElement.offsetTop;
@@ -137,11 +135,20 @@ const handleKeyDown = async (event: KeyboardEvent) => {
         tableElement.scrollTop = Math.max(0, scrollTarget);
       }
     }
-    myTable.value.select(selectedRowIds.value, false);
     selectedRowIds.value = [data.value[newIndex].id];
-    myTable.value.select(selectedRowIds.value, true);
   } else {
     // 如果有其他动作，则是选中输入框a-input，让输入框获取焦点
+    if (!showInput.value){
+      showInput.value=true;
+      // clone event
+      const newEvent = new KeyboardEvent(event.type, event);
+      // resend this KeyboardEvent, the same event key
+      await nextTick(() => {
+        myInput.value.focus();
+        document.dispatchEvent(newEvent);
+      });
+    }
+    console.log(myInput.value);
     myInput.value.focus();
   }
 };
@@ -160,6 +167,12 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
 });
+
+import {listen, TauriEvent} from '@tauri-apps/api/event';
+listen<string>(TauriEvent.WINDOW_FOCUS, () => {
+  init();
+});
+
 </script>
 
 <style scoped>

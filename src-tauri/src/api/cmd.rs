@@ -18,7 +18,7 @@ pub fn paste(clipboard_item_id: String) {
 
 #[tauri::command]
 pub fn query_clipboard_items(keyword: String) -> Vec<ClipboardItemDTO> {
-    println!("query_clipboard_items");
+    println!("query_clipboard_items:{}",keyword);
     let param = if keyword.is_empty() {
         None
     } else {

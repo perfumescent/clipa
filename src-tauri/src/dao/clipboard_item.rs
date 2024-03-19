@@ -1,7 +1,6 @@
 use crate::clipboard::clipboard_image::ClipboardImage;
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
-
+use chrono::Local;
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ClipboardContent {
     Text(String),
@@ -18,7 +17,7 @@ pub struct ClipboardItem {
 impl ClipboardItem {
     pub fn new(content: ClipboardContent, summary: String) -> Self {
         Self {
-            id: Instant::now().elapsed().as_micros().to_string(),
+            id: Local::now().timestamp_millis().to_string(),
             content,
             summary,
         }
